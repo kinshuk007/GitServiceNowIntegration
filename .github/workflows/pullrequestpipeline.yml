@@ -4,7 +4,7 @@ name: ServiceNow Pull Request Pipeline
 on:
   pull_request:
     branches:
-      - sn_instances/dev269603_ServiceNow
+      - undefined
      
 jobs:
   build:
