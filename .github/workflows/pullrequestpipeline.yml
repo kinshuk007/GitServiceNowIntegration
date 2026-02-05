@@ -1,0 +1,54 @@
+name: ServiceNow Pull Request Pipeline
+
+# Trigger on PRs targeting your DEV branch
+on:
+  pull_request:
+    branches:
+      - undefined
+     
+jobs:
+  build:
+    # Purpose: execute ATF on current PR branch
+    name: Run ATF on DEV instance
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1️⃣ Checkout the PR branch
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      # 2️⃣ Configure SSH for ServiceNow CI/CD
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -t rsa ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+
+      # 3️⃣ Apply changes from PR to DEV instance
+      - name: ServiceNow CI/CD Apply Changes
+        uses: ServiceNow/sncicd-apply-changes@1.2.1
+        env:
+          snowSSHPrivateKey: ${{ secrets.SSH_PRIVATE_KEY }}
+          snowSSHPublicKey: ${{ secrets.SSH_PUBLIC_KEY }}
+          snowSSHHost: ${{ secrets.SSH_HOST }}
+          snowSourceInstance: ${{ secrets.NOW_DEV_INSTANCE }}
+          appSysID: ${{ secrets.APP_SYS_ID }}
+
+      # 4️⃣ Run ATF tests on DEV instance
+      - name: Run ATF Tests
+        id: atf_test_dev
+        uses: ServiceNow/sncicd-tests-run@1.0.0
+        with:
+          browserName: ''
+          browserVersion: ''
+          osName: ''
+          osVersion: ''
+          testSuiteSysId: ${{ secrets.TEST_SUITE_ID }}
+          testSuiteName: ''
+        env:
+          snowSSHPrivateKey: ${{ secrets.SSH_PRIVATE_KEY }}
+          snowSSHPublicKey: ${{ secrets.SSH_PUBLIC_KEY }}
+          snowSSHHost: ${{ secrets.SSH_HOST }}
+          snowInstallInstance: ${{ secrets.NOW_DEV_INSTANCE }}
+
